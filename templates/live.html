@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Target Cost Analysis Tool</title>
+
+<!-- Plotly CDN -->
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+<style>
+:root{--navy:#00205C;--yellow:#FFCC00;--green:#A5D6A7;--red:#EF9A9A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#eef4fa}
+.banner{height:30px;background:var(--navy);margin-bottom:1rem}
+h1{text-align:center;color:var(--navy);margin-bottom:1rem}
+.section legend,.section-title{font-size:1.25rem;font-weight:bold;color:var(--navy);margin-bottom:0.5rem}
+.section{margin:1rem 2rem}
+.section table{margin:0 auto;border-collapse:collapse}
+.section td{padding:0.4rem}
+.section td:first-child{white-space:nowrap;color:var(--navy);font-weight:500}
+input[type=number],input[type=text]{width:130px;padding:0.25rem;border:1px solid #ccc;border-radius:3px}
+.btn{font-size:1rem;font-weight:bold;border:none;border-radius:4px;cursor:pointer;padding:0.6rem 1.2rem}
+.btn-primary{background:var(--yellow);color:var(--navy)}
+.btn-danger{background:#e35c5c;color:#fff}
+.summary{margin:1rem 2rem;padding:1rem;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:4px}
+.summary p strong{color:var(--navy)}
+.alt-card{border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:0.5rem 0.8rem;margin-bottom:1rem;background:#fff}
+.alt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem}
+.alt-header h3{margin:0;font-size:1rem;color:var(--navy)}
+.comp-item{display:flex;flex-direction:column;align-items:center;width:48%}
+.comp-item img{width:100%;border:1px solid #ccc}
+.comp-caption{margin-top:4px;font-weight:500;text-align:center}
+
+/* Calculation toggle styles */
+/* Replace your existing calc toggle styles with: */
+#calcDetails {
+  display: none;
+  margin-top: 0.5rem;
+  /* Remove box look entirely */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+#calcDetails code {
+  font-family: Menlo, Consolas, Monaco, monospace;
+  background: transparent !important;
+  padding: 0;
+}
+
+#toggleCalc {
+  color: var(--navy);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+<div class="banner"></div>
+<h1 id="mainTitle">Target Cost Analysis Tool</h1>
+
+<!-- Parameter Form -->
+<form id="explorerForm">
+  <fieldset class="section">
+    <legend>Labels</legend>
+    <table>
+      {% for key,prompt,default in text_fields %}
+      <tr><td><label for="{{key}}">{{prompt}}</label></td>
+          <td><input type="text" id="{{key}}" value="{{ text_values[key] }}"></td></tr>
+      {% endfor %}
+    </table>
+  </fieldset>
+
+  <fieldset class="section">
+    <legend>Baseline ({{ text_values.baseline_label }})</legend>
+    <table>
+      {% for key,prompt,default in base_fields %}
+      <tr><td>{{prompt}}</td>
+          <td><input type="number" step="any" id="{{key}}" value="{{ base_values[key] }}"></td></tr>
+      {% endfor %}
+    </table>
+  </fieldset>
+
+  <fieldset class="section" id="altContainer">
+    <legend>Alternatives</legend>
+  </fieldset>
+
+  <div style="margin-left:2rem">
+    <button type="button" class="btn btn-primary" id="addAltBtn">Add Alternative</button>
+  </div>
+
+  <div style="text-align:center;margin-top:1rem">
+    <button type="submit" class="btn btn-primary">Update Explorer</button>
+  </div>
+</form>
+
+<!-- Summary & calculation toggle -->
+<div class="summary" id="summaryBox"></div>
+
+<div class="section" style="margin:1rem 2rem; color:#00205C; font-size:0.95rem;">
+  <span id="toggleCalc">How does it calculate?</span>
+  <div id="calcDetails">
+    <p><strong>Baseline route:</strong><br>
+      <code>C₁ = ship_cost + repair_cost + return_cost<br>
+             + (ship_time + tat + return_time) × delay_cost</code>
+    </p>
+    <p><strong>Alternative route:</strong><br>
+      <code>F  = repair_cost × discount<br>
+             + inbound_fee<br>
+             + return_cost<br>
+             + (alt_tat + alt_return_time) × delay_cost</code>
+    </p>
+    <p><strong>Break-even shipping cost:</strong><br>
+      <code>c_max = C₁ − F − ship_time × delay_cost</code>
+    </p>
+  </div>
+</div>
+
+
+<div class="section-title" style="text-align:center">Visualization</div>
+<div id="plot" style="width:95%;max-width:900px;margin:0 auto 2rem"></div>
+
+<!-- History & Comparison -->
+<div style="margin:1rem 2rem">
+  <input type="text" id="graphName" placeholder="Enter graph name">
+  <button type="button" class="btn btn-primary" id="saveGraphBtn">Save Graph</button>
+</div>
+
+<div style="margin:1rem 2rem">
+  <h2>History</h2>
+  <ul id="historyList" style="list-style:none;padding:0"></ul>
+</div>
+
+<div style="margin:1rem 2rem">
+  <h2>Comparison (max&nbsp;4)</h2>
+  <button type="button" class="btn btn-primary" id="compareBtn">Compare</button>
+  <span id="compareWarn" style="color:#c62828;margin-left:0.8rem"></span>
+  <div id="comparisonArea" style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:1rem"></div>
+  <div id="bestTxt" style="margin-top:0.8rem;font-weight:bold;color:var(--navy)"></div>
+</div>
+
+<script>
+/* ===== Constants & palette ===== */
+const STORE='tradeoffGraphs';
+const palette=['#00205C','#008080','#e67e22','#6a1b9a','#2e7d32','#c2185b','#0077c2'];
+let altCount=0;
+const fieldBase={{ base_fields|map(attribute=0)|list|tojson }};
+
+/* ===== Cost helpers ===== */
+function baselineCost(v){
+  return v.ship_cost + v.repair_cost + v.return_cost +
+         (v.ship_time + v.tat + v.return_time) * v.delay_cost;
+}
+function fixedAlt(v,a){
+  return v.repair_cost * a.discount
+       + a.inbound_fee
+       + a.return_cost
+       + (a.tat + a.return_time) * a.delay_cost;
+}
+function cmaxCurve(v,a,t){
+  return baselineCost(v) - fixedAlt(v,a) - t * a.delay_cost;
+}
+
+/* ===== Alternative card builder ===== */
+function altFieldRow(id,k,label,val){
+  return `<tr><td>${label}</td>
+          <td><input type="number" step="any" id="${id}_${k}" value="${val}"></td></tr>`;
+}
+function newAltCard(data){
+  altCount += 1;
+  const id = `alt${altCount}`;
+  const card = document.createElement('div');
+  card.className = 'alt-card';
+  card.dataset.id = id;
+  card.dataset.color = palette[(altCount-1)%palette.length];
+  card.innerHTML = `
+    <div class="alt-header">
+      <h3>Alternative <input type="text" id="${id}_label" value="${data.label||'China'}" style="width:90px"></h3>
+      <button type="button" class="btn btn-danger" onclick="removeAlt('${id}')">Delete</button>
+    </div>
+    <table>
+      ${altFieldRow(id,'tat','TAT (days)',data.tat)}
+      ${altFieldRow(id,'return_time','Return transit (days)',data.return_time)}
+      ${altFieldRow(id,'return_cost','Return cost (€)',data.return_cost)}
+      ${altFieldRow(id,'inbound_fee','Inbound fee (€)',data.inbound_fee)}
+      ${altFieldRow(id,'discount','Repair cost discount (0–1)',data.discount)}
+      ${altFieldRow(id,'delay_cost','Cost per day of TAT (€)',data.delay_cost)}
+    </table>`;
+  document.getElementById('altContainer').append(card);
+}
+function removeAlt(id){
+  const el=document.querySelector(`.alt-card[data-id="${id}"]`);
+  if(el) el.remove();
+}
+
+/* ===== Collect form data ===== */
+function collectBaseline(){
+  const v={};
+  fieldBase.forEach(k=>v[k]=parseFloat(document.getElementById(k).value));
+  return v;
+}
+function collectAlts(){
+  return [...document.querySelectorAll('.alt-card')].map(c=>{
+    const id=c.dataset.id;
+    return {
+      id, color:c.dataset.color,
+      label:document.getElementById(`${id}_label`).value,
+      tat:parseFloat(document.getElementById(`${id}_tat`).value),
+      return_time:parseFloat(document.getElementById(`${id}_return_time`).value),
+      return_cost:parseFloat(document.getElementById(`${id}_return_cost`).value),
+      inbound_fee:parseFloat(document.getElementById(`${id}_inbound_fee`).value),
+      discount:parseFloat(document.getElementById(`${id}_discount`).value),
+      delay_cost:parseFloat(document.getElementById(`${id}_delay_cost`).value)
+    };
+  });
+}
+
+/* ===== Plotly drawing ===== */
+function drawPlot(){
+  const base=collectBaseline();
+  const alts=collectAlts();
+  const t_vals=Array.from({length:151},(_,i)=>i*0.1);
+
+  const traces=alts.map(a=>{
+    const c_vals=t_vals.map(t=>cmaxCurve(base,a,t));
+    return { x:t_vals, y:c_vals, mode:'lines', name:a.label, line:{color:a.color,width:3} };
+  });
+
+  const cheapest=t_vals.map((_,i)=>Math.min(...alts.map(a=>cmaxCurve(base,a,t_vals[i]))));
+  traces.unshift({
+    x:[...t_vals,...t_vals.slice().reverse()],
+    y:[...cheapest,Array(cheapest.length).fill(0)].flat(),
+    fill:'tozeroy', fillcolor:'rgba(165,214,167,0.3)',
+    line:{color:'rgba(0,0,0,0)'}, hoverinfo:'skip', showlegend:false
+  });
+
+  const t_star=base.ship_time;
+  traces.push(...alts.map(a=>({
+    x:[t_star], y:[cmaxCurve(base,a,t_star)],
+    mode:'markers+text',
+    marker:{color:a.color,size:10},
+    text:[`€${cmaxCurve(base,a,t_star).toFixed(0)}`],
+    textposition:'top center',
+    hovertemplate:`${a.label}<br>c_max=%{y:.0f}€<extra></extra>`,
+    showlegend:false
+  })));
+
+  Plotly.newPlot('plot',traces,{
+    margin:{t:40}, showlegend:true,
+    xaxis:{title:'Shipping Time (days)',zeroline:false},
+    yaxis:{title:'Max Allowable Shipping Cost (€)',rangemode:'tozero'},
+    title:'Time vs Cost Trade-off'
+  },{responsive:true});
+}
+
+/* ===== Summary box ===== */
+function updateSummary(){
+  const base=collectBaseline();
+  const alts=collectAlts();
+  const t=base.ship_time;
+  const baseCost=baselineCost(base).toFixed(2);
+
+  let html=`<p><strong>${document.getElementById('baseline_label').value} route:</strong> Total cost = €${baseCost}</p>`;
+  alts.forEach(a=>{
+    html+=`<p><strong>${a.label} option:</strong> keep shipping ≤ €${cmaxCurve(base,a,t).toFixed(2)} at ${t}-day transit.</p>`;
+  });
+  document.getElementById('summaryBox').innerHTML=html;
+}
+
+/* ===== Compare-warning helper ===== */
+function updateCompareWarn(){
+  const sel=document.querySelectorAll('.histCB:checked').length;
+  document.getElementById('compareWarn').textContent= sel>4?'⚠ Maximum 4 graphs selectable':'';
+}
+
+/* ===== History save/load ===== */
+function saveToHistory(name){
+  Plotly.toImage('plot',{format:'png',width:900,height:500})
+    .then(src=>{
+      const arr=JSON.parse(localStorage.getItem(STORE)||'[]');
+      if(arr.length>=20) arr.shift();
+      arr.push({name,src});
+      localStorage.setItem(STORE,JSON.stringify(arr));
+      loadHistory();
+    });
+}
+function loadHistory(){
+  const list=document.getElementById('historyList');
+  list.innerHTML='';
+  const arr=JSON.parse(localStorage.getItem(STORE)||'[]');
+  arr.forEach((it,i)=>{
+    const li=document.createElement('li');
+    li.style.display='flex';li.style.alignItems='center';li.style.marginBottom='4px';
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.className='histCB';cb.dataset.i=i;cb.onchange=updateCompareWarn;
+    const img=document.createElement('img');
+    img.src=it.src;img.style.width='80px';img.style.margin='0 6px';
+    const span=document.createElement('span');
+    span.textContent=it.name;span.style.flex='1';
+    const del=document.createElement('button');
+    del.textContent='Delete';del.className='btn btn-danger';
+    del.onclick=()=>{arr.splice(i,1);localStorage.setItem(STORE,JSON.stringify(arr));loadHistory();};
+    li.append(cb,img,span,del);list.append(li);
+  });
+  updateCompareWarn();
+}
+
+/* ===== Comparison grid ===== */
+document.getElementById('compareBtn').onclick=()=>{
+  const selected=[...document.querySelectorAll('.histCB:checked')];
+  if(selected.length===0) return;
+  if(selected.length>4){updateCompareWarn();return;}
+  const data=JSON.parse(localStorage.getItem(STORE)||'[]');
+  const area=document.getElementById('comparisonArea');
+  area.innerHTML='';
+  selected.forEach(cb=>{
+    const it=data[cb.dataset.i];
+    const wrap=document.createElement('div');wrap.className='comp-item';
+    const img=document.createElement('img');img.src=it.src;
+    const cap=document.createElement('div');cap.className='comp-caption';cap.textContent=it.name;
+    wrap.append(img,cap);area.append(wrap);
+  });
+};
+
+/* ===== Calculation toggle script ===== */
+document.getElementById('toggleCalc').addEventListener('click', () => {
+  const d = document.getElementById('calcDetails');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+});
+
+/* ===== Event bindings ===== */
+document.getElementById('saveGraphBtn').onclick=()=>{
+  const name=document.getElementById('graphName').value.trim();
+  if(name){saveToHistory(name);document.getElementById('graphName').value='';}
+};
+document.getElementById('explorerForm').onsubmit=e=>{
+  e.preventDefault();drawPlot();updateSummary();
+};
+document.getElementById('addAltBtn').onclick=()=>newAltCard({
+  label:`Alt${altCount+1}`,tat:14,return_time:1.5,return_cost:90,inbound_fee:20,discount:0.9,delay_cost:10
+});
+
+/* ===== Initial page load ===== */
+window.addEventListener('DOMContentLoaded',()=>{
+  newAltCard({label:'China', ...{{ alt_default|tojson }}}); 
+  drawPlot();updateSummary();loadHistory();
+});
+</script>
+</body>
+</html>
