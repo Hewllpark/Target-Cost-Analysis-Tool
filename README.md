@@ -1,6 +1,30 @@
-
-````markdown
 # Target-Cost Explorer
+
+**Break-even Formulas**
+
+Baseline total cost (Germany):
+
+$$
+C_1 = \text{ship\_cost} + \text{repair\_cost} + \text{return\_cost}
+     + (\text{ship\_time} + \text{tat} + \text{return\_time}) \times \text{delay\_cost}
+$$
+
+Alternative fixed costs (China):
+
+$$
+F = \text{repair\_cost} \times \text{discount}
+  + \text{inbound\_fee}
+  + \text{return\_cost}
+  + (\text{alt\_tat} + \text{alt\_return\_time}) \times \text{delay\_cost}
+$$
+
+Break-even shipping cost at \$t = \text{ship\_time}\$:
+
+$$
+c_{\max} = C_1 - F - \text{ship\_time} \times \text{delay\_cost}
+$$
+
+---
 
 An interactive Flask web-app for evaluating the break-even shipping cost and time when moving component repairs from a baseline facility (e.g. Germany) to one or more alternative repair shops (e.g. China).
 
@@ -8,14 +32,14 @@ An interactive Flask web-app for evaluating the break-even shipping cost and tim
 
 ## 1. Features
 
-| Function                   | Description                                                                              |
-|----------------------------|------------------------------------------------------------------------------------------|
-| **Live parameter form**    | All cost / time inputs editable in the browser.                                          |
-| **Plotly chart**           | Interactive “Max Allowable Shipping Cost vs Transit Time” curve with hover tool-tips, zoom and pan. |
-| **Multiple alternatives**  | Add unlimited alternative flows; each receives its own line and colour.                  |
-| **Break-even marker**      | Yellow label shows the current break-even point for every alternative.                   |
-| **Local history**          | One-click snapshot to PNG, stored in browser `localStorage`.                             |
-| **Side-by-side comparison**| Pick up to four saved graphs and view them in a grid, each captioned with its name.      |
+| Function                    | Description                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Live parameter form**     | All cost / time inputs editable in the browser.                                                     |
+| **Plotly chart**            | Interactive “Max Allowable Shipping Cost vs Transit Time” curve with hover tool-tips, zoom and pan. |
+| **Multiple alternatives**   | Add unlimited alternative flows; each receives its own line and colour.                             |
+| **Break-even marker**       | Yellow label shows the current break-even point for every alternative.                              |
+| **Local history**           | One-click snapshot to PNG, stored in browser `localStorage`.                                        |
+| **Side-by-side comparison** | Pick up to four saved graphs and view them in a grid, each captioned with its name.                 |
 
 ---
 
@@ -23,28 +47,34 @@ An interactive Flask web-app for evaluating the break-even shipping cost and tim
 
 ### 2.1 Prerequisites
 
-- Python 3.9 – 3.12  
-- `pip` or `pipx`
+* Python 3.9 – 3.12
+* `pip` or `pipx`
 
 ### 2.2 Install & run
 
 ```bash
+cd CaseStudyApp-clean
+
 python -m venv .venv
+
 # Windows:
 .venv\Scripts\activate
+
 # macOS/Linux:
 source .venv/bin/activate
 
 pip install -r requirements.txt
 
-set FLASK_APP=app.py       # Windows
-# or
-export FLASK_APP=app.py    # macOS/Linux
+# Windows:
+set FLASK_APP=app.py
+
+# macOS/Linux:
+export FLASK_APP=app.py
 
 flask run
-````
+```
 
-The app will be available at **[http://127.0.0.1:5000](http://127.0.0.1:5000)**.
+Point your browser to **[http://127.0.0.1:5000](http://127.0.0.1:5000)**.
 
 ---
 
