@@ -2,31 +2,8 @@
 
 **Break-even Formulas**
 
-Baseline total cost (Germany):
+![image](https://github.com/user-attachments/assets/544a7af2-856b-451f-a4c9-2690fd4dd081)
 
-$$
-C_{1}=c_{\text{ship}}+c_{\text{repair}}+c_{\text{return}}
-     +\bigl(t_{\text{ship}}+\text{TAT}+t_{\text{return}}\bigr)\,d
-$$
-
----
-
-Alternative fixed costs (China):
-
-$$
-F = c_{\text{repair}}\times\text{discount}
-  + c_{\text{inbound}}
-  + c_{\text{return}}
-  + \bigl(\text{TAT}_{\text{alt}} + t_{\text{return,alt}}\bigr)\,d
-$$
-
----
-
-Break-even shipping cost at $t=t_{\text{ship}}$:
-
-$$
-c_{\max}=C_{1}-F-t_{\text{ship}}\,d
-$$
 
 ---
 
