@@ -4,7 +4,7 @@
 
 Baseline total cost (Germany):
 
-$C_1 = \text{ship\_cost} + \text{repair\_cost} + \text{return\_cost} + (\text{ship\_time} + \text{tat} + \text{return\_time}) \times \text{delay\_cost}$
+$C_1 = \text{ship\cost} + \text{repair\cost} + \text{return\cost} + (\text{ship\time} + \text{tat} + \text{return\time}) \times \text{delay\cost}$
 
 Alternative fixed costs (China):
 
