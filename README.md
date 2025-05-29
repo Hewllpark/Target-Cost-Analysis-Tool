@@ -9,14 +9,22 @@ C_{1}=c_{\text{ship}}+c_{\text{repair}}+c_{\text{return}}
      +\bigl(t_{\text{ship}}+\text{TAT}+t_{\text{return}}\bigr)\,d
 $$
 
-Alternative fixed costs (China):
+ Alternative fixed costs (China):
 
-![F = c_repair⋅discount + c_inbound + c_return + (TAT_alt + t_return,alt)⋅d](https://latex.codecogs.com/png.latex?
-F%20%3D%20c_{\text{repair}}\times\text{discount}
-%20+%20c_{\text{inbound}}
-%20+%20c_{\text{return}}
-%20+%20\bigl(\text{TAT}_{\text{alt}}%20+%20t_{\text{return,alt}}\bigr)\,d
-)
+- ```
+- $$
+- F = c_{\text{repair}}\times\text{discount}
+-   + c_{\text{inbound}}
+-   + c_{\text{return}}
+-   + \bigl(\text{TAT}_{\text{alt}} + t_{\text{return,alt}}\bigr)\,d
+- $$
+- ```
++ $$
++ F = c_{\text{repair}}\times\text{discount}
++   + c_{\text{inbound}}
++   + c_{\text{return}}
++   + \bigl(\text{TAT}_{\text{alt}} + t_{\text{return,alt}}\bigr)\,d
++ $$
 
 
 Break-even shipping cost at $t=t_{\text{ship}}$:
