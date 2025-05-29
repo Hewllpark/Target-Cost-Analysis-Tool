@@ -9,6 +9,8 @@ C_{1}=c_{\text{ship}}+c_{\text{repair}}+c_{\text{return}}
      +\bigl(t_{\text{ship}}+\text{TAT}+t_{\text{return}}\bigr)\,d
 $$
 
+---
+
 Alternative fixed costs (China):
 
 $$
@@ -18,6 +20,7 @@ F = c_{\text{repair}}\times\text{discount}
   + \bigl(\text{TAT}_{\text{alt}} + t_{\text{return,alt}}\bigr)\,d
 $$
 
+---
 
 Break-even shipping cost at $t=t_{\text{ship}}$:
 
