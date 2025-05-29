@@ -4,15 +4,25 @@
 
 Baseline total cost (Germany):
 
-$C_1 = \text{ship\cost} + \text{repair\cost} + \text{return\cost} + (\text{ship\time} + \text{tat} + \text{return\time}) \times \text{delay\cost}$
+$$
+C_{1}=c_{\text{ship}}+c_{\text{repair}}+c_{\text{return}}
+     +\bigl(t_{\text{ship}}+\text{TAT}+t_{\text{return}}\bigr)\,d
+$$
 
 Alternative fixed costs (China):
 
-$F = \text{repair\_cost} \times \text{discount} + \text{inbound\_fee} + \text{return\_cost} + (\text{alt\_tat} + \text{alt\_return\_time}) \times \text{delay\_cost}$
+$$
+F=c_{\text{repair}}\times\text{discount}
+  +c_{\text{inbound}}
+  +c_{\text{return}}
+  +\bigl(\text{TAT}_{\text{alt}}+t_{\text{return,alt}}\bigr)\,d
+$$
 
-Break-even shipping cost at \$t = \text{ship\_time}\$:
+Break-even shipping cost at $t=t_{\text{ship}}$:
 
-$c_{\max} = C_1 - F - \text{ship\_time} \times \text{delay\_cost}$
+$$
+c_{\max}=C_{1}-F-t_{\text{ship}}\,d
+$$
 
 ---
 
